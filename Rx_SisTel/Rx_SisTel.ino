@@ -1,30 +1,49 @@
 /*
- * Alunos: Alaf Santos / Matheus Boy
+ * Alunos: Alaf Santos / Lucas Chemelli / Matheus Boy
  * Disciplina: Sistemas de Telecomunicacoes
  * Codigo para Receptor VLC
+ * line code that maybe I'll need (it is just about an error that I got): sudo chmod a+rw /dev/ttyACM0
  */
+
+#include <LiquidCrystal_I2C.h>  //classe do lcd
+#include <Wire.h> 
 
 #define LDR A5
 #define vectorSize 200
 #define LIM 25 //200/8 - NUMERO DE CARACTERES NO DADO
 #define WAIT 5//200Hz
 
+LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7,3, POSITIVE);
 
 void defineThreshold(int *samples, int *threshold);
 void defineBitsArray(int *samples, int *threshold);
+
 void printOutput(int *bitsArray);
-int searchAHeader(int *bitsArray);
-int searchAFooter(int *bitsArray);
+
+int  searchAHeader(int *bitsArray);
+int  searchAFooter(int *bitsArray);
+
+void LCD_write(int linha, String text);
+void LCD_Update(float value, int bitPar, int *bitsArray);
+
+unsigned int numberOfOnes(int *bitsArray);
 
 void setup()
 {
   Serial.begin(115200);
   pinMode(LDR, INPUT);
+
+  lcd.begin(16, 2);                 // 20x4 LCD module
+  lcd.setBacklight(HIGH);
+
+  lcd.setCursor(0, 0); // Go to home of 2nd line
+  lcd.print("Inicializando Receptor...");
+  delay(1000);
 }
 
 void loop()
 {
-  int *samples;
+ /* int *samples;
   samples = (int*)malloc(sizeof(int)*vectorSize);
   for(int i = 0; i < vectorSize; i++)
   {
@@ -38,6 +57,41 @@ void loop()
   printOutput(samples);
   free(samples);
   free(threshold);
+*/}
+
+void LCD_write(int linha, String text)
+{
+  int max_chars = 19;
+  for(int i = 0; i!=max_chars && i!=text.length(); i++)
+  {
+    lcd.setCursor(i, linha);
+    lcd.print(text[i]);
+  }
+}
+
+void LCD_Update(float value, int bitPar, int *bitsArray)
+{
+    if(bitPar == !(numberOfOnes(bitsArray)%2))
+    {
+      lcd.setCursor(0,1); 
+      lcd.print("ERRO DE LEITURA"); 
+      lcd.setCursor(0,0); 
+      delay(1000); 
+      lcd.print("BIT DE PARIDADE");
+      delay(500);
+      lcd.clear();
+    }
+    else
+    {
+      lcd.clear();
+      String msg = "Sensor: " + String(value);
+      LCD_write(0, msg);
+    }
+}
+
+unsigned int numberOfOnes(int *bitsArray)
+{
+  return 10;
 }
 
 
