@@ -37,7 +37,7 @@ void loop()
 
  String pktIEEE754 = StringI3E754(sensor); //neste ponto ja temos a string de bits
  sendData(pktIEEE754);
-
+ delay(500);
 }
 
 String StringI3E754(float sensor)

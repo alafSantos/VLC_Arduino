@@ -9,24 +9,24 @@
 #include <Wire.h> 
 
 #define LDR A5
-#define vectorSize 200
-#define LIM 25 //200/8 - NUMERO DE CARACTERES NO DADO
+#define vectorSize 82 //usaremos somente 41 no melhor caso
+#define pktSize 41 // 4 bits de start, 32 do float i3e754, 1 paridade e 4 de stop
 #define WAIT 5//200Hz
+
+float N0 = 0, N1 = 0, N2 = 0;
 
 LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7,3, POSITIVE);
 
-void defineThreshold(int *samples, int *threshold);
-void defineBitsArray(int *samples, int *threshold);
+void defineBitsArray(int *samples, int *bitsArray);
 
-void printOutput(int *bitsArray);
-
-int  searchAHeader(int *bitsArray);
-int  searchAFooter(int *bitsArray);
+int  searchStart(int *samples);
+int  searchStop(int *samples);
 
 void LCD_write(int linha, String text);
-void LCD_Update(float value, int bitPar, int *bitsArray);
+void LCD_Update(float value, int *bitsArray);
 
 unsigned int numberOfOnes(int *bitsArray);
+float floatI3E754(int *bitsArray);
 
 void setup()
 {
@@ -43,21 +43,25 @@ void setup()
 
 void loop()
 {
- /* int *samples;
+  
+  int *samples, *bitsArray;
   samples = (int*)malloc(sizeof(int)*vectorSize);
+  bitsArray = (int*)malloc(sizeof(int)*pktSize);
   for(int i = 0; i < vectorSize; i++)
   {
     samples[i] = analogRead(LDR);
-    delay(WAIT);   
+    delay(WAIT/2);   
   }
   
-  int *threshold = (int*)malloc(sizeof(int)*LIM);
-  defineThreshold(samples, threshold);
-  defineBitsArray(samples, threshold);
-  printOutput(samples);
+  defineBitsArray(samples, bitsArray);
+
+  float sensorValue = floatI3E754(bitsArray);
+
+  LCD_Update(sensorValue, bitsArray);
+
   free(samples);
-  free(threshold);
-*/}
+  free(bitsArray);
+}
 
 void LCD_write(int linha, String text)
 {
@@ -69,9 +73,9 @@ void LCD_write(int linha, String text)
   }
 }
 
-void LCD_Update(float value, int bitPar, int *bitsArray)
+void LCD_Update(float value, int *bitsArray)
 {
-    if(bitPar == !(numberOfOnes(bitsArray)%2))
+    if(bitsArray[36] == !(numberOfOnes(bitsArray)%2))
     {
       lcd.setCursor(0,1); 
       lcd.print("ERRO DE LEITURA"); 
@@ -91,145 +95,57 @@ void LCD_Update(float value, int bitPar, int *bitsArray)
 
 unsigned int numberOfOnes(int *bitsArray)
 {
-  return 10;
+  int counter = 0;
+  for(int i = 4; i <= 35; i++)
+    if(bitsArray[i] == 1)
+      counter++;
+  return counter;
 }
 
 
-void defineThreshold(int *samples, int *threshold)
+//implementando
+void defineBitsArray(int *samples, int *bitsArray)
 {
-  unsigned long int sum=0;
-  for(int j = 0; j < LIM; j++)
-  {
-   for(int i = 0; i < 7; i++) sum+=samples[i+j];
-   threshold[j] = sum/8;
 
-   //Serial.print("Threshold: ");
-  // Serial.println(threshold[j]);
-  }
-}
+  int startP = searchStart(samples);
+  int stopP = searchStop(samples);
 
-void defineBitsArray(int *samples, int *threshold)
-{
-  for(int j = 0; j < LIM; j++)
-  {
-    for(int i = 0; i < 7; i++)
-    {
-      if(samples[i+j] >= threshold[j]) samples[i+j] = 1;
-      else samples[i+j] = 0;
-      Serial.print("Bits: ");
-      Serial.println(samples[i+j]);
-      delay(500);
-    } 
-  }
-}
-
-void printOutput(int *bitsArray)
-{
-  for(int i = 0; i < vectorSize; i++)Serial.println(bitsArray[i]);
-/*  int *output;
-  output = (int*)malloc(sizeof(int)*LIM);
-  
-  int startOutput = searchAHeader(bitsArray);
-  int stopOutput  = searchAFooter(bitsArray);
-
-  if((startOutput > 7) && (stopOutput > 0))
-  {
-    for(int j = 0; j < LIM; j++)
-    for(int i = startOutput; i < stopOutput; i++) 
-      output[j+i] += pow(2, 7-i)*bitsArray[i];  
-  }
   
   
+  for(int i = 0; i < pktSize; i++)
+  {
+    if(samples[i] == N2 && samples[i+1] == N0) bitsArray[i] = 1;
+    if(samples[i] == N0 && samples[i+1] == N2) bitsArray[i] = 0;
+  }
 
-  Serial.print("Valor Decimal Recebido: ");
-  for(int j = 0; j < LIM; j+=8)
-    Serial.print(output[j]);
 
-  Serial.println(" "); //pula uma linha
-
-  delay(500);
-  free(output);*/
+  /*
+    A ideia é desfazer o manchester com a cara do pacote que montamos no transmissor
+    primeiro ele tem de cair por 2 waits em N0 e no fim tem de se manter em N1 (no bit)
+    as variações de 1 e 0 sao definidas como N2/N0 e N0/N2 respectivamente. Para tal temos de
+    definir N0, N1 e N2 e trabalhar com uma margem de erro de pelo menos X% (X experimental).
+  */
 }
 
 
-int searchAHeader(int *bitsArray) //00100011
+
+//implementar
+int searchStart(int *samples)
 {
-  int HeaderPosition = 0;
-  for(int i = 0; i < vectorSize; i++)
-  {
-    if(i < (vectorSize-24))
-    {
-        if(bitsArray[i] == "0")
-        {
-          if(bitsArray[i+1] == "0")
-          {
-            if(bitsArray[i+2] == "1")
-            {
-              if(bitsArray[i+3] == "0")
-              {
-                if(bitsArray[i+4] == "0")
-                {
-                  if(bitsArray[i+5] == "0")
-                  {
-                    if(bitsArray[i+6] == "1")
-                    {
-                      if(bitsArray[i+7] == "1")
-                      {
-                        HeaderPosition = i;
-                        Serial.print("Header Encontrado -- ");
-                        Serial.println(i);
-                        delay(1000);
-                      }
-                    }
-                    
-                  }
-                }
-              }
-            }
-          }
-        } 
-    }
-  }
-  return (HeaderPosition + 7);
+  int startPosition = 0;
+  return startPosition;
 }
 
-int searchAFooter(int *bitsArray) //00100100
+//implementar
+int searchStop(int *samples)
 {
-  int FooterPosition = 0;
-  for(int i = 0; i < vectorSize; i++)
-  {
-    if(i < (vectorSize-24))
-    {
-        if(bitsArray[i] == "0")
-        {
-          if(bitsArray[i+1] == "0")
-          {
-            if(bitsArray[i+2] == "1")
-            {
-              if(bitsArray[i+3] == "0")
-              {
-                if(bitsArray[i+4] == "0")
-                {
-                  if(bitsArray[i+5] == "1")
-                  {
-                    if(bitsArray[i+6] == "0")
-                    {
-                      if(bitsArray[i+7] == "0")
-                      {
-                        FooterPosition = i;
-                        Serial.print("Footer Encontrado -- ");
-                        Serial.println(i);
-                        delay(1000);
-                      }
-                    }
-                    
-                  }
-                }
-              }
-            }
-          }
-        } 
-    }
-  }
-  return (FooterPosition);
+  int stopPosition = 0;
+  return stopPosition;
+}
+
+//implementar
+float floatI3E754(int *bitsArray)
+{
+  float value;
+  return value;
 }
