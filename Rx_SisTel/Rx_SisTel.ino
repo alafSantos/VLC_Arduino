@@ -1,6 +1,4 @@
 /*
- * Alunos: Alaf Santos / Lucas Chemelli / Matheus Boy
- * Disciplina: Sistemas de Telecomunicacoes
  * Codigo para Receptor VLC
  * line code that maybe I'll need (it is just about an error that I got): sudo chmod a+rw /dev/ttyACM0
  */

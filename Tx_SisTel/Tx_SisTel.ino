@@ -1,6 +1,4 @@
 /*
- * Alunos: Alaf Santos / Lucas Chemelli / Matheus Boy 
- * Disciplina: Sistemas de Telecomunicacoes
  * Codigo para Transmissor VLC
  * line code that maybe I'll need (it is just about an error that I got): sudo chmod a+rw /dev/ttyACM0
  */
@@ -19,6 +17,9 @@ void sendPKT754(String pktIEEE754);
 void sendStart();
 void sendStop();
 
+void sendOne();
+void sendZero();
+
 void printDebugWave(int N);
 
 void setup() 
@@ -33,9 +34,6 @@ void loop()
  analogWrite(LED, N1);
  delay(500);
  float sensor = analogRead(SENSOR);
-// Serial.print("Leitura Sensor: ");
-// Serial.println(sensor);
-
  String pktIEEE754 = StringI3E754(sensor); //neste ponto ja temos a string de bits
  sendData(pktIEEE754);
  delay(500);
@@ -61,10 +59,7 @@ void sendStart()
   for(int j = 0; j < 4; j++)
   {
      analogWrite(LED, N2);
-  //   Serial.println("N2");
-
-    printDebugWave(N2);
-  
+     printDebugWave(N2);
      delay(WAIT);   
   }
 }
@@ -74,10 +69,7 @@ void sendStop()
   for(int j = 0; j < 4; j++)
   {
      analogWrite(LED, N1);
-   //  Serial.println("N1");
-
-    printDebugWave(N1);
-   
+     printDebugWave(N1);
      delay(WAIT);   
   }
 }
@@ -88,74 +80,43 @@ void sendPar(String pktIEEE754)
   for(int i = 0; i < pktIEEE754.length(); i++)
     if(pktIEEE754[i] == '1')
       counter++;
-  if(!(counter%2))
-  {
-  //    Serial.println("UM");
-      analogWrite(LED, N2);
       
-      printDebugWave(N2);
-      
-      delay(WAIT/2);
-      
-      analogWrite(LED, N0);
-
-      printDebugWave(N0);
-      
-      delay(WAIT/2);
-  }
-  else
-  {
-  //    Serial.println("ZERO");
-      analogWrite(LED, N0);
-
-      printDebugWave(N0);
-      
-      delay(WAIT/2);
-      
-      analogWrite(LED, N2);
-
-      printDebugWave(N2);      
-      
-      delay(WAIT/2); 
-  }
+  if(!(counter%2)) sendOne();
+  else sendZero();
 }
 
 void sendPKT754(String pktIEEE754)
 {
   for(int i = 0; i < pktIEEE754.length(); i++)
   {
-    if(pktIEEE754[i] == '1')
-    { 
-    //  Serial.println("UM");
-      analogWrite(LED, N2);
-
-      printDebugWave(N2);
-    
-      delay(WAIT/2);
-      
-      analogWrite(LED, N0);
-
-      printDebugWave(N0);
-      
-      delay(WAIT/2);
-    }
-    else 
-    {
-   //   Serial.println("ZERO");
-      analogWrite(LED, N0);
-      
-      printDebugWave(N0);
-
-      delay(WAIT/2);
-
-      
-      analogWrite(LED, N2);
-
-      printDebugWave(N2);
-            
-      delay(WAIT/2);
-    }  
+    if(pktIEEE754[i] == '1') sendOne();
+    else sendZero();
   }
+}
+
+void sendOne()
+{
+  //   Serial.println("Um");
+      analogWrite(LED, N0);
+      printDebugWave(N0);
+      delay(WAIT/2);
+
+      
+      analogWrite(LED, N2);
+      printDebugWave(N2);
+      delay(WAIT/2);
+}
+
+void sendZero()
+{
+  //  Serial.println("Zero");
+      analogWrite(LED, N2);
+      printDebugWave(N2);
+      delay(WAIT/2);
+      
+      analogWrite(LED, N0);
+      printDebugWave(N0);
+      delay(WAIT/2);
 }
 
 void printDebugWave(int N)
