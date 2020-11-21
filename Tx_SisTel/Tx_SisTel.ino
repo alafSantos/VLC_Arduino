@@ -8,7 +8,7 @@
 #define SENSOR A0   //usar um potenciometro pra simular um sensor qualquer
 #define LED 10     //Pino onde saira o sinal pros leds
 #define N2  255
-#define N1  227 
+#define N1  228 
 #define N0  200     
 #define WAIT 100      //200Hz - sincronizado com o receptor (pseudo clk)
 
@@ -60,10 +60,10 @@ void sendStart()
 {
   for(int j = 0; j < 4; j++)
   {
-     analogWrite(LED, N0);
-  //   Serial.println("N0");
+     analogWrite(LED, N2);
+  //   Serial.println("N2");
 
-    printDebugWave(N0);
+    printDebugWave(N2);
   
      delay(WAIT);   
   }
