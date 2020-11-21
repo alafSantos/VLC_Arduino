@@ -1,16 +1,23 @@
 /*
- * Codigo para Transmissor VLC
+ * VLC Transmitter Based on OOk modulation and Manchester Code
  * line code that maybe I'll need (it is just about an error that I got): sudo chmod a+rw /dev/ttyACM0
  */
 
-#define SENSOR A0   //usar um potenciometro pra simular um sensor qualquer
-#define LED 10     //Pino onde saira o sinal pros leds
+#define SENSOR A0   //using a variable resistor to simulate a sensor
+#define LED 10     //the gate where the data will be available
+
+/* Manchester levels */
 #define N2  255
 #define N1  228 
-#define N0  200     
+#define N0  200
+
+/* Timing - T = (1/f) [ms] */     
 #define WAIT 100      //200Hz - sincronizado com o receptor (pseudo clk)
 
+
+/* Functions and methods that we'll use later */
 String StringI3E754(float sensor);
+
 void sendData(String pktIEEE754);
 void sendPar(String pktIEEE754);
 void sendPKT754(String pktIEEE754);
@@ -22,6 +29,8 @@ void sendZero();
 
 void printDebugWave(int N);
 
+
+/*system boot*/
 void setup() 
 {
   Serial.begin(115200);
@@ -29,22 +38,24 @@ void setup()
   pinMode(SENSOR, INPUT);
 }
 
+/*main function - loop*/
 void loop() 
 {
- analogWrite(LED, N1);
- delay(500);
- float sensor = analogRead(SENSOR);
- String pktIEEE754 = StringI3E754(sensor); //neste ponto ja temos a string de bits
- sendData(pktIEEE754);
- delay(500);
+ analogWrite(LED, N1); //turn LED on
+ float sensor = analogRead(SENSOR); //reading the sensor gate
+ String pktIEEE754 = StringI3E754(sensor); //in this point, we have the string of bits
+ sendData(pktIEEE754); //sending data after get the bits array
+ //maybe we need a timing here
 }
 
+/*Input = float number / output = string of bits in the format IEEE 754*/
 String StringI3E754(float sensor)
 {
-  //implementar
+  //not implemented yet
   return "01010101010101011111";
 }
 
+/*this is like the second main function, cuz here, we have the protocol form [start - pkt754 - parity - stop]*/
 void sendData(String pktIEEE754)
 {
  sendStart();
@@ -94,14 +105,14 @@ void sendPKT754(String pktIEEE754)
   }
 }
 
+
+/* it's kind of a manchester code defined by IEEE 802.3*/
 void sendOne()
 {
-  //   Serial.println("Um");
       analogWrite(LED, N0);
       printDebugWave(N0);
       delay(WAIT/2);
-
-      
+ 
       analogWrite(LED, N2);
       printDebugWave(N2);
       delay(WAIT/2);
@@ -109,7 +120,6 @@ void sendOne()
 
 void sendZero()
 {
-  //  Serial.println("Zero");
       analogWrite(LED, N2);
       printDebugWave(N2);
       delay(WAIT/2);
@@ -119,9 +129,10 @@ void sendZero()
       delay(WAIT/2);
 }
 
+/*It will be useful to draw a wave from the signal output*/
 void printDebugWave(int N)
 {
   Serial.print(N);
   Serial.print(" ");
-  Serial.println(millis()/10000);
+  Serial.println(millis()/1000);
 }

@@ -1,20 +1,23 @@
 /*
- * Codigo para Receptor VLC
+ * VLC Receiver Based on OOk modulation and Manchester Code
  * line code that maybe I'll need (it is just about an error that I got): sudo chmod a+rw /dev/ttyACM0
  */
 
-#include <LiquidCrystal_I2C.h>  //classe do lcd
-#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>  //LCD Class
+#include <Wire.h>               //to use I2C protocol
 
-#define LDR A5
-#define vectorSize 82 //usaremos somente 41 no melhor caso
-#define pktSize 41 // 4 bits de start, 32 do float i3e754, 1 paridade e 4 de stop
-#define WAIT 5//200Hz
+#define LDR A5                  //our input is based on this light sensor
+#define vectorSize 100          //this is the length of the light values vector
+#define pktSize 41              //this is the length of the bits vector (with all package)
+#define WAIT 100                //timing value, it needs to be the same in the transmitter
 
+/* Manchester levels */
 float N0 = 0, N1 = 0, N2 = 0;
 
+/* To use the display */
 LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7,3, POSITIVE);
 
+/* Functions and methods that we'll use later */
 void defineBitsArray(int *samples, int *bitsArray);
 
 int  searchStart(int *samples);
@@ -26,12 +29,13 @@ void LCD_Update(float value, int *bitsArray);
 unsigned int numberOfOnes(int *bitsArray);
 float floatI3E754(int *bitsArray);
 
+/*sysem boot*/
 void setup()
 {
   Serial.begin(115200);
   pinMode(LDR, INPUT);
 
-  lcd.begin(16, 2);                 // 20x4 LCD module
+  lcd.begin(16, 2);                 // 16x2 LCD module
   lcd.setBacklight(HIGH);
 
   lcd.setCursor(0, 0); // Go to home of 2nd line
@@ -39,6 +43,7 @@ void setup()
   delay(1000);
 }
 
+/*main function - loop*/
 void loop()
 {
   
