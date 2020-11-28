@@ -7,16 +7,18 @@
 #define LED 10     //the gate where the data will be available
 
 /* Manchester levels */
-#define N2  255
-#define N1  228 
-#define N0  200
+#define N2  250
+#define N1  150 
+#define N0  100
 
 /* Timing - T = (1/f) [ms] */     
 #define WAIT 100      //200Hz - sincronizado com o receptor (pseudo clk)
 
+#define BUTTON 9
 
 /* Functions and methods that we'll use later */
 String StringI3E754(float sensor);
+
 
 void sendData(String pktIEEE754);
 void sendPar(String pktIEEE754);
@@ -29,6 +31,11 @@ void sendZero();
 
 void printDebugWave(int N);
 
+void (*resetFunc)(void) = 0; //declare reset function @ address 0
+
+bool lastButtonState = LOW, buttonState;
+
+unsigned long timeCounter = 0, lastDebounceTime = 0, debounceDelay = 50;
 
 /*system boot*/
 void setup() 
@@ -36,23 +43,44 @@ void setup()
   Serial.begin(115200);
   pinMode(LED, OUTPUT);
   pinMode(SENSOR, INPUT);
+  pinMode(BUTTON, INPUT);
 }
 
 /*main function - loop*/
 void loop() 
 {
  analogWrite(LED, N1); //turn LED on
- float sensor = analogRead(SENSOR); //reading the sensor gate
- String pktIEEE754 = StringI3E754(sensor); //in this point, we have the string of bits
- sendData(pktIEEE754); //sending data after get the bits array
- //maybe we need a timing here
+ printDebugWave(N1);
+
+ /*DEBOUNCE*/
+ bool reading = digitalRead(BUTTON);
+ 
+ if(reading != lastButtonState)
+  lastDebounceTime = millis();
+
+ if((millis() - lastDebounceTime) > debounceDelay)
+  if(reading != buttonState)
+   buttonState = reading; 
+ lastButtonState = reading;
+
+ /* If buttonState == HIGH we do our transmission */
+ if(buttonState)
+ {
+   float sensor = analogRead(SENSOR); //reading the sensor gate
+   
+   String pktIEEE754 = StringI3E754(sensor); //in this point, we have the string of bits
+   sendData(pktIEEE754); //sending data after get the bits array
+
+   buttonState = LOW;
+   if(timeCounter > 2147483648) resetFunc();
+ }
 }
 
 /*Input = float number / output = string of bits in the format IEEE 754*/
 String StringI3E754(float sensor)
 {
   //not implemented yet
-  return "01010101010101011111";
+  return "10101010101010101010101010101010";
 }
 
 /*this is like the second main function, cuz here, we have the protocol form [start - pkt754 - parity - stop]*/
@@ -134,5 +162,6 @@ void printDebugWave(int N)
 {
   Serial.print(N);
   Serial.print(" ");
-  Serial.println(millis()/1000);
+  Serial.println((millis() - timeCounter)/1000);
+  timeCounter = millis();
 }
