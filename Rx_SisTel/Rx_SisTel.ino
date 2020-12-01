@@ -14,7 +14,6 @@
 
 #include <LiquidCrystal_I2C.h>  //LCD Class
 #include <Wire.h>               //to use I2C protocol
-
 #define LDR A0                  //our input is based on this light sensor
 #define pktSize 33              //this is the length of the bits vector (with pk754 + parity)
 #define WAIT 100                //timing value, it needs to be the same in the transmitter
@@ -251,9 +250,12 @@ void checkParity(int *bitsArray)
 //implementar
 float floatI3E754(int *bitsArray)
 {
-  float value = 0;
+  float value = 1.1;
   return value;
 }
+
+
+
 
 /*OK*/
 void LCD_write(int linha, String text)

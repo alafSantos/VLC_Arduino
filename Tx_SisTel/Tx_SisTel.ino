@@ -12,7 +12,7 @@
 #define N0  100
 
 /* Timing - T = (1/f) [ms] */     
-#define WAIT 100      //200Hz - sincronizado com o receptor (pseudo clk)
+#define WAIT 250      //4Hz - sincronizado com o receptor (pseudo clk)
 
 #define BUTTON 9
 
@@ -35,7 +35,7 @@ void (*resetFunc)(void) = 0; //declare reset function @ address 0
 
 bool lastButtonState = LOW, buttonState;
 
-unsigned long timeCounter = 0, lastDebounceTime = 0, debounceDelay = 50;
+unsigned long timeCounter = 0, lastDebounceTime = 0, debounceDelay = 15;
 
 /*system boot*/
 void setup() 
@@ -76,12 +76,51 @@ void loop()
  }
 }
 
+
+//------------------------------------------------------------------------------
+struct IEEEfloat
+{
+    uint32_t m:23; 
+    uint8_t e:8;
+    uint8_t s:1;
+};
+
+
 /*Input = float number / output = string of bits in the format IEEE 754*/
 String StringI3E754(float sensor)
 {
-  //not implemented yet
-  return "10101010101010101010101010101010";
+    IEEEfloat* x = (IEEEfloat*) ((void*)&sensor);
+
+    //Serial.print("Float: "); Serial.println(sensor);
+    
+   /* Serial.print(" sign: "); Serial.print(x->s, BIN);
+    Serial.print("  exp: "); Serial.print(x->e, BIN);
+    Serial.print(" mant: "); Serial.println(x->m, BIN);*/
+
+    //we need to verify every components from the package before the sum
+    //sign is just one bit
+    //8 bits exp
+
+    String pkt754_sign = String(x->s,BIN);
+    String pkt754_exp  = String(x->e,BIN);
+    String pkt754_mant = String(x->m,BIN);
+
+    String aux1 = "";
+    for(int i = 0; i < (8-pkt754_exp.length()); i++) aux1 += "0";
+
+    String aux2 = "";
+    for(int i = 0; i < (23-pkt754_mant.length()); i++) aux2 += "0";
+
+    pkt754_exp = aux1 + pkt754_exp;
+    pkt754_mant = aux2 + pkt754_mant;
+        
+    String pkt754 = pkt754_sign + pkt754_exp + pkt754_mant;
+   // Serial.print("Package IEEE 754: ");Serial.println(pkt754);
+
+    return pkt754;
 }
+//------------------------------------------------------------------------------
+
 
 /*this is like the second main function, cuz here, we have the protocol form [start - pkt754 - parity - stop]*/
 void sendData(String pktIEEE754)
