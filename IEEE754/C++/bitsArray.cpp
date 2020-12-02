@@ -41,10 +41,13 @@ float GetFloat32(string Binary)
   for ( int i = 0; i < 23; i++ )
   {
     int c = Binary[ i + 9 ] - '0';
+    cout << Binary[ i + 9 ] << " / "<< c << endl;
     total += (float) c * (float) pow( 2.0, power );
     power--;
   }
   total += 1.0;
+
+  cout << "mantissa lidada: "<< total << endl;
 
   float value = sign * (float) pow( 2.0, exponent ) * total;
 

@@ -119,8 +119,8 @@ void loop()
   /*definir samples na mão para fins de testes*/
   //defini que 900 será equivalente a N0 e 1023 equivalente a N2
 
-  samples[0] = 900;
-  samples[1] = 1023;
+  samples[0] = 1023;
+  samples[1] = 900;
   samples[2] = 1023;
   samples[3] = 900;
   for(int i = 4; i < vectorSize; i+=4)
@@ -138,22 +138,23 @@ void loop()
   //segue o algoritmo normalmente agora
   
 //--------------------------------------------------------------------------------
+
   defineBitsArray(samples, bitsArray);
-//--------------------------------------------------------------------------------
+
   if(ERRO) sensorValue = -127.00;
   else
   {
   	 checkParity(bitsArray);
   	 sensorValue = floatI3E754(bitsArray);
   }
-//--------------------------------------------------------------------------------
+
   LCD_Update(sensorValue, bitsArray);
-//--------------------------------------------------------------------------------
+  Serial.println(sensorValue);
+
   free(samples);
   free(bitsArray);
-//-------------------------------------------------------------------------------- 
+  
   if(timeCounter > 2147483648)resetFunc();
-
 }
 
 /*Tratar ruidos e tudo mais ainda - lembrar de só sair com as 66 posicoes de luz referentes a 
@@ -247,11 +248,30 @@ void checkParity(int *bitsArray)
   else ERRO = 2;
 }
 
-//implementar
+/*OK*/
 float floatI3E754(int *bitsArray)
 {
-  float value = 1.1;
-  return value;
+    float value = 0;
+    
+    int sign = 1;
+    if(bitsArray[0]) sign = -1;
+    
+    int exp754 = bitsArray[1]*pow(2,7) + bitsArray[2]*pow(2,6) + bitsArray[3]*pow(2,5) + bitsArray[4]*pow(2,4) 
+               + bitsArray[5]*pow(2,3) + bitsArray[6]*pow(2,2) + bitsArray[7]*pow(2,1) + bitsArray[8]*pow(2,0);
+    exp754 = exp754 - 127;
+    
+    int power = -1;
+    float mant = 0.0;
+      for ( int i = 0; i < 23; i++ )
+      {
+        int c = bitsArray[ i + 9 ];
+        mant += (float) c * (float) pow( 2.0, power );
+        power--;
+      }
+    mant += 1.0;
+    
+    value = sign*(float)pow(2.0,exp754)*mant; 
+    return value;
 }
 
 
@@ -317,8 +337,8 @@ void LCD_Update(float value, int *bitsArray)
 /*It will be useful to draw a wave from the signal input*/
 void printDebugWave(int N)
 {
-  Serial.print(N);
+ /* Serial.print(N);
   Serial.print(" ");
   Serial.println((millis() - timeCounter)/1000);
-  timeCounter = millis();
+  timeCounter = millis();*/
 }

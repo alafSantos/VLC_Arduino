@@ -61,9 +61,20 @@ void dumpFloat(float number)
 
     String teste = String(x->s,BIN) + String(x->e,BIN) + String(x->m,BIN);
     Serial.println(teste);
-    //String pkt754 = " ";
-    //pkt754 = String(convert2BIN(x->s,1));
-   // Serial.print("Package 754: "); Serial.println(pkt754);
+
+    String pktBIN = "01000000111100000000000000000000"; //7.5
+    int bitsArray[] =  {0,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    for(int i = 0; i < 32;i++)Serial.print(bitsArray[i]);
+    Serial.println();
+
+    //daqui pra frente bitsArray é o cara que eu quero reconstruir como 7.5
+
+    float value = 0;
+    for(int i = 0; i < 32; i++)
+    {
+      if(bitsArray[i])bitSet(value,i+1);
+    }
+    Serial.println(value);
 }
 
 // print "double" components
