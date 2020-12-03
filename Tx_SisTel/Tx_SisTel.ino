@@ -7,12 +7,12 @@
 #define LED 10     //the gate where the data will be available
 
 /* Manchester levels */
-#define N2  250
+#define N2  255
 #define N1  150 
 #define N0  100
 
 /* Timing - T = (1/f) [ms] */     
-#define WAIT 250      //4Hz - sincronizado com o receptor (pseudo clk)
+#define WAIT 160      //2Hz - sincronizado com o receptor (pseudo clk)
 
 #define BUTTON 9
 
@@ -62,6 +62,8 @@ void loop()
   if(reading != buttonState)
    buttonState = reading; 
  lastButtonState = reading;
+
+  //buttonState=HIGH;
 
  /* If buttonState == HIGH we do our transmission */
  if(buttonState)
@@ -125,6 +127,7 @@ String StringI3E754(float sensor)
 /*this is like the second main function, cuz here, we have the protocol form [start - pkt754 - parity - stop]*/
 void sendData(String pktIEEE754)
 {
+ Serial.println(pktIEEE754);
  sendStart();
  sendPKT754(pktIEEE754);
  sendPar(pktIEEE754);
@@ -199,8 +202,8 @@ void sendZero()
 /*It will be useful to draw a wave from the signal output*/
 void printDebugWave(int N)
 {
-  Serial.print(N);
+/*  Serial.print(N);
   Serial.print(" ");
   Serial.println((millis() - timeCounter)/1000);
-  timeCounter = millis();
+  timeCounter = millis();*/
 }

@@ -16,13 +16,14 @@
 #include <Wire.h>               //to use I2C protocol
 #define LDR A0                  //our input is based on this light sensor
 #define pktSize 33              //this is the length of the bits vector (with pk754 + parity)
-#define WAIT 100                //timing value, it needs to be the same in the transmitter
+#define WAIT 160                //timing value, it needs to be the same in the transmitter
 
 #define Margin 0.0295      			//acceptable margin of error in variations of values
 
 
 const int vectorSize = 2*pktSize; //this is the length of the light values vector - it must be at least >= 2*pktSize
 unsigned int ERRO = 0;
+bool flag = LOW;
 
 /* Manchester levels */
 float N0 = 0, N1 = 0, N2 = 0, Ni = 0; //Ni for unknown values
@@ -32,11 +33,11 @@ LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7,3, POSITIVE);
 
 /* Functions and methods that we'll use later */
 
-void defineSamplesArray(int *samples);
+void defineSamplesArray(int *samples, int *samples2);
 void defineBitsArray(int *samples, int *bitsArray);
 
 void LCD_write(int linha, String text);
-void LCD_Update(float value, int *bitsArray);
+void LCD_Update(float value);
 
 void checkParity(int *bitsArray);
 float floatI3E754(int *bitsArray);
@@ -64,164 +65,386 @@ void setup()
 /*main function - loop*/
 void loop()
 {
-
-//-----------------------------------------------------------------------------------
- /*  int tam = 100;
-   int luz[tam];
-   for(int i = 0; i < tam; i++)
-   {
-    luz[i] = analogRead(LDR);
-    delay(WAIT/2);
-   }
-   
-    for (int i = 0; i < tam - 1; i++)
-    {
-        for (int j = i; j < tam - 1; j++)
-        {
-            if (luz[i] < luz[j])
-            {
-                int temp = luz[i];
-                luz[i] = luz[j];
-                luz[j] = temp;
-            }
-        }
-    }
-
-    int mediaMaior = 0, mediaMenor = 0, mediaMeio = 0;
-    for(int i = 0; i < tam; i++)
-    {
-      if(i<(tam/3)) mediaMeio += luz[i];
-      else if(i > (2*tam/3)) mediaMenor += luz[i];
-      else mediaMaior += luz[i];
-    }
-
-    mediaMenor = mediaMenor/(tam/3);
-    mediaMeio = mediaMeio/(tam/3);
-    mediaMaior = mediaMaior/(tam/3);
-
-    Serial.println(String(mediaMenor) + " < " + String(mediaMeio) + " < " + String(mediaMaior)); 
-   */
-   //printDebugWave(analogRead(LDR));
-   
-  // delay(WAIT/2);
-
-//----------------------------------------------------------------------------------
   //reserving space for bit and light vectors
-  int *samples, *bitsArray;
+  int *samples, /**samples2,*/ *bitsArray, aux = 0;
   float sensorValue = -127.00;
   samples = (int*)malloc(sizeof(int)*vectorSize); //to light values
+  //samples2   = (int*)malloc(sizeof(int)*vectorSize*2);
   bitsArray = (int*)malloc(sizeof(int)*pktSize);  //to bits (1s and 0s)
-//--------------------------------------------------------------------------------
- //calling the functions that will deal with the light samples
- // defineSamplesArray(samples);
-//--------------------------------------------------------------------------------
 
-  /*definir samples na mão para fins de testes*/
-  //defini que 900 será equivalente a N0 e 1023 equivalente a N2
 
-  samples[0] = 1023;
-  samples[1] = 900;
-  samples[2] = 1023;
-  samples[3] = 900;
-  for(int i = 4; i < vectorSize; i+=4)
+//leitura do sensor de luz utilizado (LDR no caso - ele estah causando muito ruido)
+  /*for(int i = 0; i < (vectorSize*2); i++)
   {
-    for(int j = 0; j < 4; j++)
-    {
-      samples[i+j] = samples[j];
-    }
-  }
+    samples2[i] = analogRead(LDR);
+    delay(WAIT/2);
+    Serial.println("Recebendo");
+  }*/
 
-  // paridade
-  samples[vectorSize-2] = 900;
-  samples[vectorSize-1] = 1023;
-  
-  //segue o algoritmo normalmente agora
-  
-//--------------------------------------------------------------------------------
 
+//Opcao para simular uma leitura com menos ruidos 
+  int samples2[] = {
+793,
+792,
+798,
+782,
+799,
+781,
+782,
+782,
+782,
+782,
+782,
+782,
+782,
+797,
+785,
+798,
+820,
+821,
+830,
+835,
+820,
+821,
+830,
+829,
+//---------------------------------------------------
+//36.8
+830,
+790,
+790,
+830,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+790,
+830,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+790,
+830,
+830,
+790,
+830,
+790,
+790,
+830,
+790,
+830,
+830,
+790,
+830,
+790,
+790,
+830,
+790,
+830,
+830,
+790,
+830,
+790,
+790,
+830,
+790,
+830,
+830,
+790,
+830,
+790,
+790,
+830,
+790,
+830,
+830,
+790,
+830,
+790,
+790,
+830,
+790,
+830,
+//7.5
+/*830,
+790,
+790,
+830,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,
+830,
+790,*/
+//---------------------------------------------------
+800,
+795,
+777,
+795,
+777,
+795,
+777,
+795,
+777,
+795,
+777,
+795,
+777,
+795,
+777,
+795,
+819,
+829,
+835,
+799,
+774,
+857,
+858,
+858,
+858,
+859,
+858,
+859,
+860,
+860,
+791,
+763,
+858,
+860,
+792,
+860,
+790,
+860,
+742,
+729,
+860,
+860,
+789,
+860,
+742,
+859,
+795,
+813,
+860,
+760,
+859,
+746,
+860,
+860,
+784,
+857,
+739,
+750,
+860,
+860,
+783,
+757,
+859,
+756,
+860,
+833,
+839,
+810,
+785,
+798,
+823,
+833,
+839,
+808,
+783,
+797,
+821,
+830,
+835,
+803,
+777,
+795,
+819,
+829,
+835,
+799,
+774,
+857,
+858,
+858,
+858,
+859,
+858,
+859,
+860,
+860,
+791,
+763,
+858,
+860,
+792,
+860,
+790,
+860,
+742,
+729,
+860,
+860,
+789,
+860,
+742,
+859,
+795,
+813,
+860,
+760,
+859,
+746,
+860,
+860,
+784,
+857,
+739,
+750,
+860,
+860,
+783,
+757,
+859,
+756,
+860};
+
+  //calling the functions that will deal with the light samples
+  defineSamplesArray(samples, samples2);  
   defineBitsArray(samples, bitsArray);
 
   if(ERRO) sensorValue = -127.00;
-  else
-  {
+  else if(flag)
+  {    
   	 checkParity(bitsArray);
-  	 sensorValue = floatI3E754(bitsArray);
+   	 sensorValue = floatI3E754(bitsArray);
+
+     /*Serial.println(sensorValue);
+     for(int i = 0; i < pktSize; i++)Serial.print(bitsArray[i]);
+     Serial.println(" ");*/
   }
 
-  LCD_Update(sensorValue, bitsArray);
-  Serial.println(sensorValue);
-
+  Serial.print("Sensor: ");Serial.println(sensorValue);
+  //LCD_Update(sensorValue);  
+  
   free(samples);
   free(bitsArray);
   
   if(timeCounter > 2147483648)resetFunc();
 }
 
-/*Tratar ruidos e tudo mais ainda - lembrar de só sair com as 66 posicoes de luz referentes a 
-  pkt754 + parity */
-void defineSamplesArray(int *samples)
+/* "OK" */
+void defineSamplesArray(int *samples, int *samples2)
 {
-  samples[0] = analogRead(LDR); //the first position will be filled
-  
-  unsigned int counter = 0;
-  
-  for(int i = 1; i < vectorSize; i++)
-  {
-    if(counter == 3) //if counter is equal to 3, we have already passed the start
+    int aux3[vectorSize*2];  
+    for(int i = 0; i < (vectorSize*2); i++)aux3[i]=samples2[i];
+    
+    for (int i = 0; i < ((vectorSize*2)-1) ; i++)
     {
-    	for(int k = 0; k < vectorSize; k++) //picking up values of light respectives to Manchester levels
-    	{
-  			samples[k] = analogRead(LDR);
-  		  delay(WAIT/2);	
-    	}
-    	//here, we'll verify if stop timing was respected
-    	for(int w = 0; w < 4; w++)
-    	{
-			if(analogRead(LDR) == N1) //tratar margem de erro depois
-			{
-				counter++;
-				delay(WAIT);				
-			}
-			else
-			{
-				counter = 0;
-				break;
-			}
-		}
-		
-		if(counter < 4) ERRO = 1;
-    	
-    	break; //it interrupts the loop based on i counter
+        for (int j = i; j < vectorSize-1 ; j++)
+        {
+           if (samples2[i] < samples2[j])
+           {
+              int temp = samples2[i];
+              samples2[i] = samples2[j];
+              samples2[j] = temp;
+           }
+         }
     }
-    else
+    int mediaMaior = 0, mediaMenor = 0, mediaMeio = 0;
+    for(int i = 0; i < vectorSize; i++)
     {
-    	samples[i] = analogRead(LDR);
-   		
-   		//looking for the start
-	  	if(samples[i-1] < samples[i])
-	  	{
-	  		N1 = samples[i-1];
-	  		N2 = samples[i];
+      if(i<(vectorSize/3)) mediaMeio += samples2[i];
+      else if(i > (2*vectorSize/3)) mediaMenor += samples2[i];
+      else mediaMaior += samples2[i];
+    }
+    mediaMenor = mediaMenor/(vectorSize/3);
+    mediaMeio = mediaMeio/(vectorSize/3);
+    mediaMaior = mediaMaior/(vectorSize/3);
 
-        N0 = N1 - (N2 - N1);
-	  		
-	  		for(int j = 0; j < 3; j++) //4T for start, but theoretically the first one was in the i position 
-	  		{
-	  			if(analogRead(LDR) == samples[i])
-	  			{
-	  				counter++;   //we need the value N2 repeted 4 times (i, i+1, i+2, i+3)
-	  				delay(WAIT); //clk time
-	  			}
-	  			else
-	  			{
-	  				counter = 0;
-	  				break; //stop the loop and go back to the searching of start
-	   			}
-	   		}
-	   		
-	  	} 
+  for(int i = 0; i < vectorSize*2; i++)samples2[i]=aux3[i]; //recupera a ordem certa
+
+  int aux = 0;
+  for(int i = 1; i < vectorSize*2; i++)
+  {
+    if(aux == 8)
+    {
+      aux = i;
+      flag = HIGH;
+      break;
     }
+    else if(mediaMeio*(1-Margin) <= samples2[i] && samples[i] <= mediaMaior) aux++;
+    else aux = 0;
   }
+  
+  if(flag)
+     for(int i = 0; i < vectorSize; i++)
+       samples[i] = samples2[aux+i];
+       
+  flag = HIGH;
 }
 
 /*OK*/
@@ -289,7 +512,7 @@ void LCD_write(int linha, String text)
 }
 
 /*OK*/
-void LCD_Update(float value, int *bitsArray)
+void LCD_Update(float value)
 {
   if((millis() - timeError) > 1000)
   {
@@ -337,8 +560,8 @@ void LCD_Update(float value, int *bitsArray)
 /*It will be useful to draw a wave from the signal input*/
 void printDebugWave(int N)
 {
- /* Serial.print(N);
+  Serial.print(N);
   Serial.print(" ");
   Serial.println((millis() - timeCounter)/1000);
-  timeCounter = millis();*/
+  timeCounter = millis();
 }
