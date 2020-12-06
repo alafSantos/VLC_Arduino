@@ -12,7 +12,7 @@
 #define N0  100
 
 /* Timing - T = (1/f) [ms] */     
-#define WAIT 160      //2Hz - sincronizado com o receptor (pseudo clk)
+#define WAIT 80      //2Hz - sincronizado com o receptor (pseudo clk)
 
 #define BUTTON 9
 
@@ -69,6 +69,8 @@ void loop()
  if(buttonState)
  {
    float sensor = analogRead(SENSOR); //reading the sensor gate
+
+   Serial.print("Sensor: ");Serial.println(sensor);
    
    String pktIEEE754 = StringI3E754(sensor); //in this point, we have the string of bits
    sendData(pktIEEE754); //sending data after get the bits array
@@ -127,7 +129,6 @@ String StringI3E754(float sensor)
 /*this is like the second main function, cuz here, we have the protocol form [start - pkt754 - parity - stop]*/
 void sendData(String pktIEEE754)
 {
- Serial.println(pktIEEE754);
  sendStart();
  sendPKT754(pktIEEE754);
  sendPar(pktIEEE754);
@@ -202,7 +203,7 @@ void sendZero()
 /*It will be useful to draw a wave from the signal output*/
 void printDebugWave(int N)
 {
-/*  Serial.print(N);
+  /*Serial.print(N);
   Serial.print(" ");
   Serial.println((millis() - timeCounter)/1000);
   timeCounter = millis();*/

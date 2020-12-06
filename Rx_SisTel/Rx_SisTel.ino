@@ -16,7 +16,7 @@
 #include <Wire.h>               //to use I2C protocol
 #define LDR A0                  //our input is based on this light sensor
 #define pktSize 33              //this is the length of the bits vector (with pk754 + parity)
-#define WAIT 160                //timing value, it needs to be the same in the transmitter
+#define WAIT 80                //timing value, it needs to be the same in the transmitter
 
 #define Margin 0.0295      			//acceptable margin of error in variations of values
 
@@ -66,24 +66,26 @@ void setup()
 void loop()
 {
   //reserving space for bit and light vectors
-  int *samples, /**samples2,*/ *bitsArray, aux = 0;
+  int *samples, *samples2,*bitsArray, aux = 0;
   float sensorValue = -127.00;
   samples = (int*)malloc(sizeof(int)*vectorSize); //to light values
-  //samples2   = (int*)malloc(sizeof(int)*vectorSize*2);
+  samples2   = (int*)malloc(sizeof(int)*vectorSize*2);
   bitsArray = (int*)malloc(sizeof(int)*pktSize);  //to bits (1s and 0s)
 
 
+VOLTA:
 //leitura do sensor de luz utilizado (LDR no caso - ele estah causando muito ruido)
-  /*for(int i = 0; i < (vectorSize*2); i++)
+  for(int i = 0; i < (vectorSize*2); i++)
   {
     samples2[i] = analogRead(LDR);
+    printDebugWave(samples2[i]);
     delay(WAIT/2);
-    Serial.println("Recebendo");
-  }*/
+  }
 
+  
 
 //Opcao para simular uma leitura com menos ruidos 
-  int samples2[] = {
+  /*int  samples2 = {
 793,
 792,
 798,
@@ -110,7 +112,7 @@ void loop()
 829,
 //---------------------------------------------------
 //36.8
-830,
+/*830,
 790,
 790,
 830,
@@ -173,7 +175,7 @@ void loop()
 790,
 830,
 790,
-830,
+830,*/
 //7.5
 /*830,
 790,
@@ -238,7 +240,7 @@ void loop()
 830,
 790,
 830,
-790,*/
+790,
 //---------------------------------------------------
 800,
 795,
@@ -370,27 +372,33 @@ void loop()
 757,
 859,
 756,
-860};
+860};*/
 
   //calling the functions that will deal with the light samples
   defineSamplesArray(samples, samples2);  
   defineBitsArray(samples, bitsArray);
-
+  
+  ERRO = LOW;
   if(ERRO) sensorValue = -127.00;
   else if(flag)
   {    
-  	 checkParity(bitsArray);
+  	 //checkParity(bitsArray);
    	 sensorValue = floatI3E754(bitsArray);
 
-     /*Serial.println(sensorValue);
-     for(int i = 0; i < pktSize; i++)Serial.print(bitsArray[i]);
-     Serial.println(" ");*/
+     //for(int i = 0; i < pktSize; i++)Serial.print(bitsArray[i]);
+     //Serial.println(" ");
   }
+  //delay(2000);
+
 
   Serial.print("Sensor: ");Serial.println(sensorValue);
+
+  goto VOLTA;
+  
   //LCD_Update(sensorValue);  
   
   free(samples);
+  free(samples2);
   free(bitsArray);
   
   if(timeCounter > 2147483648)resetFunc();
@@ -560,8 +568,8 @@ void LCD_Update(float value)
 /*It will be useful to draw a wave from the signal input*/
 void printDebugWave(int N)
 {
-  Serial.print(N);
+ /* Serial.print(N);
   Serial.print(" ");
   Serial.println((millis() - timeCounter)/1000);
-  timeCounter = millis();
+  timeCounter = millis();*/
 }
